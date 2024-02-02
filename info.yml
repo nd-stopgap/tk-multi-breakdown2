@@ -93,6 +93,12 @@ configuration:
                      timeout. The default interval length is 30 seconds. Set a negative valeu to not
                      perform the background file item status checks.
 
+    use_publish_data:
+        type: bool
+        default_value: False
+        description: Provide Published File data to Fileitem extra_data['sg_data'] to explicitly say what published
+                     which file is used.
+
 
 # The ShotGrid fields that this app needs in order to operate correctly
 requires_shotgun_fields:

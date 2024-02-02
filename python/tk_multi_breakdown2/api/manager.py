@@ -61,7 +61,7 @@ class BreakdownManager(object):
 
     @sgtk.LogManager.log_timing
     def get_published_files_from_file_paths(
-        self, file_paths, extra_fields=None, bg_task_manager=None, extra_data=None
+            self, file_paths, extra_fields=None, bg_task_manager=None, extra_data=None
     ):
         """
         Query the ShotGrid API to get the published files for the given file paths.
@@ -91,13 +91,14 @@ class BreakdownManager(object):
         # Get the published file filters to pass to the query
         filters = self.get_published_file_filters()
 
-        f_operators = []
-        for i in extra_data:
-            if i.get("sg_data"):
-                f_operators.append(["id", "in", i['sg_data']['id']])
-        filters.append({"filter_operator": "any",
-                        "filters": f_operators
-                    })
+        if self._bundle.get_setting("use_publish_data"):
+            f_operators = []
+            for i in extra_data:
+                if i.get("sg_data"):
+                    f_operators.append(["id", "in", i['sg_data']['id']])
+            filters.append({"filter_operator": "any",
+                            "filters": f_operators
+                            })
 
         # Option to run this in a background task since this can take some time to execute.
         if bg_task_manager:
