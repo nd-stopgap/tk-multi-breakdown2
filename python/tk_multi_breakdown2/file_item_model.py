@@ -700,11 +700,13 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
             # File. Some files can come from other projects so we cannot rely on templates,
             # and instead need to query ShotGrid.
             file_paths = [o["path"] for o in self.__scene_objects]
+            extra_data = [o.get("extra_data", {}) for o in self.__scene_objects]
             self.__pending_published_file_data_request = (
                 self._manager.get_published_files_from_file_paths(
                     file_paths,
                     extra_fields=self._published_file_fields,
                     bg_task_manager=self._bg_task_manager,
+                    extra_data=extra_data
                 )
             )
         except:
