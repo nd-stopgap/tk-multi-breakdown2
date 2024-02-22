@@ -61,7 +61,7 @@ class BreakdownManager(object):
 
     @sgtk.LogManager.log_timing
     def get_published_files_from_file_paths(
-            self, file_paths, extra_fields=None, bg_task_manager=None, extra_data=None
+        self, file_paths, extra_fields=None, bg_task_manager=None, extra_data=None
     ):
         """
         Query the ShotGrid API to get the published files for the given file paths.
@@ -90,15 +90,6 @@ class BreakdownManager(object):
 
         # Get the published file filters to pass to the query
         filters = self.get_published_file_filters()
-
-        if self._bundle.get_setting("use_publish_data"):
-            f_operators = []
-            for i in extra_data:
-                if i.get("sg_data"):
-                    f_operators.append(["id", "in", i['sg_data']['id']])
-            filters.append({"filter_operator": "any",
-                            "filters": f_operators
-                            })
 
         # Option to run this in a background task since this can take some time to execute.
         if bg_task_manager:
@@ -154,9 +145,9 @@ class BreakdownManager(object):
 
         for obj in scene_objects:
             if obj["path"] in published_files:
-                file_item = FileItem(obj["node_name"], obj["node_type"], obj["path"])
+                file_item = FileItem(obj["node_name"], obj["node_type"], obj["path"], obj.get("sg_data", None))
                 file_item.extra_data = obj.get("extra_data")
-                file_item.sg_data = published_files[obj["path"]]
+                file_item.sg_data = obj.get("sg_data",  published_files[obj["path"]])
                 file_items.append(file_item)
 
         return file_items
@@ -286,6 +277,34 @@ class BreakdownManager(object):
 
         # Return empty list indicating no publish file history was found.
         return []
+
+    def remove_from_scene(self, items):
+        """
+        Remove Items from scene
+
+        :param items: The item or items to remove.
+        :type items: FileItem | List[FileItem]
+
+        :return: The list of file item objects that were updated to the latest version.
+        :rtype: List[FileItem]
+        """
+
+        hook_path = self._bundle.get_setting("hook_scene_operations")
+        scene_operation_hook = self._bundle.create_hook_instance(hook_path)
+        if not hasattr(scene_operation_hook, "remove_items"):
+            raise TankHookMethodDoesNotExistError
+
+        # Prepare the items to update
+        for i in items:
+
+            # Execute the hook to perform the update operation.
+            self._bundle.execute_hook_method(
+                "hook_scene_operations",
+                "remove_items",
+                item=i.to_dict(),
+            )
+
+        self.scan_scene()
 
     def update_to_latest_version(self, items):
         """

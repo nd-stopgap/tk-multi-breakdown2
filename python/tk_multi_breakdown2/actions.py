@@ -76,6 +76,31 @@ class ActionManager(object):
         return q_action
 
     @staticmethod
+    def remove_from_scene(file_items, model, parent=None):
+        """
+        Build a QAction for the "Remove From Scene" menu item.
+
+        :param file_item: The file item to update to a specific version.
+        :type file_item: FileItem
+        :parma model: The Qt model that the may need to be updated after the action executes.
+        :type model: QtGui.QStandardItemModel
+        :param sg_data: Dictionary of ShotGrid data representing the published file we want to update the item to
+        :type sg_data: dict
+        :param parent: Parent widget
+        :type parent: QtGui.QWidget
+
+        :return: The QAction representing the menu item.
+        :rtype: QtGui.QAction
+        """
+
+        action = RemoveFromSceneAction("Remove From scene", file_items, model)
+
+        q_action = QtGui.QAction(action.label, parent)
+        q_action.triggered[()].connect(lambda checked=False: action.execute())
+
+        return action.execute()
+
+    @staticmethod
     def execute_update_to_latest_action(file_items, model):
         """
         Execute the "Update to latest" action.
@@ -186,6 +211,43 @@ class UpdateToLatestVersionAction(Action):
                 index,
                 [self._model.FILE_ITEM_ROLE, self._model.FILE_ITEM_SG_DATA_ROLE],
             )
+
+class RemoveFromSceneAction(Action):
+    """Remove From Scene"""
+
+    def __init__(self, label, file_items, model):
+        """
+        Class constructor
+
+        :param label: Name of the action.
+        :type label: str
+        :param items: The list of file items to perform the action on.
+        :type items: list<FileItem>
+        :param model: The Qt model that may need to be updated after the action executes.
+        :type model: QtGui.QStandardItemModel
+        """
+
+        super(RemoveFromSceneAction, self).__init__(label, file_items, model)
+
+    @wait_cursor
+    def execute(self):
+        """Remove A list of items from the scene"""
+
+        if not self._file_items:
+            return
+
+        removed_items = self._manager.remove_from_scene(self._file_items)
+
+        #for file_item in removed_items:
+        #    # The file item object that the model holds was updated by the manager.
+        #    # Emit a signal that the data has changed.
+        #    index = self._get_index_for_item(file_item)
+        #    self._model.dataChanged.emit(
+        #        index,
+        #        index,
+        #        [self._model.FILE_ITEM_ROLE, self._model.FILE_ITEM_SG_DATA_ROLE],
+        #    )
+
 
 
 class UpdateToSpecificVersionAction(Action):

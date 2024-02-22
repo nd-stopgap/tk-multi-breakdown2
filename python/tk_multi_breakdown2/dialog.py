@@ -784,6 +784,12 @@ class AppDialog(QtGui.QWidget):
         )
         context_menu.addAction(update_to_latest_action)
 
+        remove_from_scene_action = QtGui.QAction("Remove from scene")
+        remove_from_scene_action.triggered.connect(
+            lambda checked=False: self._on_remove_selected()
+        )
+        context_menu.addAction(remove_from_scene_action)
+
         # Add action to show details for the item that the context menu is shown for.
         show_details_action = QtGui.QAction("Show Details")
         show_details_action.triggered.connect(
@@ -1301,6 +1307,38 @@ class AppDialog(QtGui.QWidget):
             self._listen_for_events(False)
         try:
             ActionManager.execute_update_to_latest_action(file_items, self._file_model)
+        finally:
+            self.__executing_bulk_action = False
+            # Turn on event handling if it was on before
+            if self._auto_refresh:
+                self._listen_for_events(self._auto_refresh)
+            self._filter_menu.refresh()
+
+    def _on_remove_selected(self):
+        """
+        Callback triggere when the "Remove from scene" button is clicked. This will remove
+        all selected items.
+        """
+
+        selection_model = self._ui.file_view.selectionModel()
+        if not selection_model:
+            return
+
+        file_items = []
+        indexes = selection_model.selectedIndexes()
+        for index in indexes:
+            if isinstance(index.model(), QtGui.QSortFilterProxyModel):
+                index = index.model().mapToSource(index)
+            file_item = index.data(FileModel.FILE_ITEM_ROLE)
+            file_items.append(file_item)
+
+        # Turn off event handling while executing the action, we do not want the UI to handle
+        # events while performating the action.
+        self.__executing_bulk_action = True
+        if self._auto_refresh:
+            self._listen_for_events(False)
+        try:
+            ActionManager.remove_from_scene(file_items, self._file_model)
         finally:
             self.__executing_bulk_action = False
             # Turn on event handling if it was on before

@@ -18,4 +18,5 @@ PUBLISHED_FILES_FIELDS = [
     "published_file_type",
     "path",
     "version_number",
+    "sg_revision"
 ]
